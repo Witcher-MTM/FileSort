@@ -7,112 +7,96 @@ namespace SystemProj
 {
     class Program
     {
+        static Dictionary<string, List<string>> folders = new Dictionary<string, List<string>> {
+           { "Text", new List<string> { ".txt", ".doc",".pdf"} },
+           { "Images", new List<string> { ".png", ".jpeg",".ico",".jpg" } },
+           { "Programs", new List<string> { ".exe" } },
+           { "Videos", new List<string> { ".avi", ".mp4",".gif" } },
+           { "Music", new List<string> { ".mp3", ".wav",".ogg" } },
+           { "Archive", new List<string> { ".zip", ".rar" } },
+           { "Code", new List<string> { ".cs", ".html",".php",".cpp",".js" } }
+
+        };
+        static string path = String.Empty;
         static void Main(string[] args)
         {
             string next = String.Empty;
-            string[] tmp = { };
             List<string> coolOfElements = new List<string>();
             do
             {
-
-                tmp = Directory.GetFiles(@$"{Environment.GetFolderPath(Environment.SpecialFolder.UserProfile)}" + @"\Downloads", "*", SearchOption.AllDirectories);
-                string format = Program.Menu();
-                Console.Clear();
-                for (int i = 0; i < tmp.Length - 1; i++)
+                path = args[0];
+                path += @"\";
+                if (Directory.Exists(path))
                 {
-                    if (format == "*")
+                    coolOfElements.AddRange(Directory.GetFiles(path).Select(Path.GetFileName).ToList());
+                    Console.Clear();
+                    for (int i = 0; i < coolOfElements.Count; i++)
                     {
-                        coolOfElements.Add(tmp[i]);
-                        Console.WriteLine($"Element [{i}]:" + Path.GetFileName(tmp[i]));
+                        Console.WriteLine($"Element [{i}]:" + coolOfElements[i]);
                     }
-                    if (tmp[i].EndsWith("." + format))
+                    if (coolOfElements.Count <= 0)
                     {
-                        coolOfElements.Add(tmp[i]);
-                        Console.WriteLine($"Element [{i}]:" + Path.GetFileName(tmp[i]));
+                        Console.WriteLine("Not exist files");
                     }
-                }
-                if (coolOfElements.Count <= 0)
-                {
-                    Console.WriteLine("Not exist files with " + $"{format} " + "format");
+                    else
+                    {
+                        Console.WriteLine("Sort files [Y] - [N]");
+                        if (Console.ReadLine().ToLower() == "y")
+                        {
+                            SortFiles(coolOfElements);
+                        }
+                    }
                 }
                 else
                 {
-                    Console.WriteLine("Save files [Y] - [N]");
-                    if (Console.ReadLine().ToLower() == "y")
-                    {
-                        Saves(coolOfElements);
-                    }
-
+                    Console.WriteLine("Not exists this dir");
                 }
-
-
 
                 Console.WriteLine("Do you want to continue?");
                 Console.WriteLine("[Y]-continue [N]-exit");
                 next = Console.ReadLine();
                 Console.Clear();
+
             } while (next.ToLower() != "n");
             Environment.Exit(0);
 
         }
-        static string Menu()
-        {
-            Console.WriteLine("Choose a format:jpg exe png and ect\n Enter * to see all files");
-            string choose = Console.ReadLine();
-
-            return choose;
-        }
-        static void Saves(List<string> allapps)
+        static void SortFiles(List<string> allapps)
         {
             CreateDir();
-            string[] musFormat = { "mp3", "mp4", "wav", "mp2", "mpc", "wma", "mqa", "ac3", "ape", "asf", "aiff" };
-            string[] docFormat = { "doc", "xml", "rtf", "txt", "wps", "pdf", "html", "htm", "dot", "docx", "dotm", "dotx" };
-            string[] rarFormat = { "zip", "arj", "rar", "cab", "tar", "lzh" };
-            string[] codeFormat = { "cs", "sln", "csproj", "dll" };
-          
-            foreach (var item in allapps)
+            foreach (var item in folders)
             {
-                foreach (var mus in musFormat)
+                foreach (var format in item.Value)
                 {
-                    if (item.EndsWith("."+ mus))
-                    {
-                        File.Copy(item, Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Music\\" + Path.GetFileName(item));
-                    }
+                    allapps.Where(x => x.Contains(format)).ToList().ForEach(f => { File.Move($"{path + f}", $"{path + item.Key}\\{f}"); });
+
                 }
-                foreach (var doc in docFormat)
-                {
-                    if (item.EndsWith("." + doc))
-                    {
-                        File.Copy(item, Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Documents\\" + Path.GetFileName(item));
-                    }
-                }
-                foreach (var rar in rarFormat)
-                {
-                    if (item.EndsWith("." + rar))
-                    {
-                        File.Copy(item, Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Rar\\" + Path.GetFileName(item));
-                    }
-                }
-                foreach (var code in codeFormat)
-                {
-                    if (item.EndsWith("." + code))
-                    {
-                        File.Copy(item, Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Code\\" + Path.GetFileName(item));
-                    }
-                }
-               
             }
+            allapps = Directory.GetFiles(path).Select(Path.GetFileName).ToList();
+            allapps.ToList().ForEach(y => { File.Move($"{path + y}", $"{path}Other\\{y}"); });
+
+            DeleteEmptyDir();
+
+
         }
         static void CreateDir()
         {
-            if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Music\\"))
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Music\\");
-            if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Documents\\"))
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Documents\\");
-            if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Rar\\"))
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Rar\\");
-            if (!Directory.Exists(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Code\\"))
-                Directory.CreateDirectory(Environment.GetFolderPath(Environment.SpecialFolder.Desktop) + $"\\Code\\");
+
+            for (int i = 0; i < folders.Count; i++)
+            {
+                if (Directory.Exists($"{path + folders.ElementAt(i).Key}") == false)
+                    Directory.CreateDirectory($"{path + folders.ElementAt(i).Key}");
+            }
+            Directory.CreateDirectory($"{path}Other");
+        }
+        static void DeleteEmptyDir()
+        {
+            List<string> dirs = Directory.GetDirectories(path).ToList();
+            foreach (var item in dirs)
+            {
+                if (Directory.GetFiles(item).Length == 0)
+                    Directory.Delete(item);
+            }
         }
     }
 
